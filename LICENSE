@@ -1,0 +1,62 @@
+Research & Academic Use License
+
+Copyright (c) 2026 Arman Moradi
+
+This repository contains software developed as part of an academic research
+project in the areas of autonomous driving, reinforcement learning, and
+GPS spoofing detection.
+
+Permission is granted to any individual or organization to use, copy,
+study, reproduce, and modify this software solely for research,
+educational, and non-commercial purposes, subject to the following
+conditions:
+
+1. Proper Attribution
+
+   Any publication, thesis, dissertation, report, presentation, or
+   derivative work that uses this software, in whole or in part,
+   must provide appropriate academic citation and acknowledge the
+   original repository and author(s).
+
+2. Research Integrity
+
+   Users shall not claim authorship of this work or present modified
+   versions as the original implementation. Any modifications should
+   be clearly documented.
+
+3. Non-Commercial Use
+
+   This software may not be sold, sublicensed, incorporated into
+   commercial products, or otherwise used for commercial purposes
+   without prior written permission from the copyright holder.
+
+4. Redistribution
+
+   Redistribution of the original or modified source code is permitted,
+   provided that this license and all copyright notices remain intact.
+
+5. No Warranty
+
+   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+   CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+   TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE
+   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Citation
+
+If this repository contributes to your research, publication, thesis,
+or academic work, please cite the associated paper or this GitHub
+repository.
+
+BibTeX information will be provided upon publication.
+
+Contact
+
+For collaboration, licensing inquiries, or commercial use, please
+contact the repository author.
+
+© 2026 Arman Moradi. All rights reserved.
