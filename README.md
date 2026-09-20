@@ -11,6 +11,7 @@ The agent jointly learns **driving (speed control, distance keeping, lane change
 ## Table of Contents
 
 - [Overview](#overview)
+- [System Architecture](#system-architecture)
 - [Key Results (Evaluation, 1000 episodes)](#key-results-evaluation-1000-episodes)
 - [Method](#method)
   - [Curriculum Learning Strategy](#curriculum-learning-strategy)
@@ -40,6 +41,21 @@ This project trains a unified policy that:
 3. Avoids false alarms that would trigger costly unnecessary countermeasures.
 
 Self-adaptation is handled by a **MAPE-K loop** (`src/mapek_loop.py`) that monitors safety / detection metrics and adapts (e.g. speed-cap, best-model tracking) during training and evaluation.
+
+---
+
+## System Architecture
+
+How the pieces fit together — from spoofed sensors to safe actions:
+
+**1. Attack-aware environment (`src/unified_environment.py`).**
+Wraps `highway-v0` and adds a GPS-spoofing layer. Observation is 27-d: flattened highway state (25-d) + raw GPS integrity signal + GPS exponential moving average. Spoofing follows a Markov chain (new attack `p_start = 0.05`, persistence `p_continue` set by curriculum), so attacks arrive in temporal bursts rather than i.i.d. noise. Clean vs. spoofed GPS distributions deliberately overlap (`N(0.75, 0.15)` vs. `N(0.40, 0.15)`), forcing the agent to use history rather than a single reading.
+
+**2. Joint driving + detection policy.**
+Action space is `MultiDiscrete([5, 2])`: driving action (lane-left / idle / lane-right / faster / slower) plus a mitigate-spoof flag. Reward combines driving (60–70%) with security (+2.0 true positive, −2.0 false positive / miss, +0.5 true negative), plus distance-keeping penalty, idle penalty, and a small lane-change bonus. Policy is **RecurrentPPO with MlpLstmPolicy** (128-d MLP extractor, 128-unit LSTM), so detection is learned temporally, end-to-end with driving.
+
+**3. MAPE-K self-adaptation (`src/mapek_loop.py`).**
+Monitor → Analyse → Plan → Execute loop scores each episode with a weighted composite (collisions 45%, safe distance 20%, detection 20%, speed 10%, lane-change 5%). It tracks the best checkpoint (`best_mapek_model`), and on sustained degradation decays learning rate, boosts entropy for re-exploration, and activates a speed-cap penalty. In evaluation it runs in `eval_only` mode (monitoring without mutation).
 
 ---
 
