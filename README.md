@@ -218,4 +218,7 @@ Copy desired plots into `pics/` to update this README.
 
 ## License
 
-Distributed under the **MIT License**. See `LICENSE` for details.
+Proprietary — **All Rights Reserved**. This is a research project; the source is
+visible for transparency/review only. No permission is granted to use, copy,
+modify, or distribute it without prior written permission from the author.
+See `LICENSE` for details.

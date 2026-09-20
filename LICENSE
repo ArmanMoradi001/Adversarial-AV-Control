@@ -1,43 +1,62 @@
-Research & Academic Use License
+Proprietary Research License — All Rights Reserved
 
-Copyright (c) 2026 Arman Moradi
+Copyright (c) 2026 Arman Moradi. All rights reserved.
 
-This repository contains software developed as part of an academic research
-project in the areas of autonomous driving, reinforcement learning, and
-GPS spoofing detection.
+This repository contains source code developed as part of an academic
+research project on autonomous driving, reinforcement learning, and
+GPS spoofing detection ("the Software").
 
-Permission is granted to any individual or organization to use, copy,
-study, reproduce, and modify this software solely for research,
-educational, and non-commercial purposes, subject to the following
-conditions:
+1. Source-Available, Not Open Source
 
-1. Proper Attribution
+   The Software is made visible solely for research transparency and
+   academic review. No rights are granted by default.
 
-   Any publication, thesis, dissertation, report, presentation, or
-   derivative work that uses this software, in whole or in part,
-   must provide appropriate academic citation and acknowledge the
-   original repository and author(s).
+2. Restricted Rights
 
-2. Research Integrity
+   Without the prior express written permission of the copyright holder,
+   you may not, in whole or in part:
 
-   Users shall not claim authorship of this work or present modified
-   versions as the original implementation. Any modifications should
-   be clearly documented.
+   (a) use, execute, reproduce, or run the Software;
+   (b) copy, modify, adapt, translate, or create derivative works from it;
+   (c) publish, distribute, sublicense, rent, lease, lend, or otherwise
+       make it available to any third party;
+   (d) incorporate it into any product, service, dataset, model, or
+       publication workflow, whether commercial or non-commercial,
+       including academic, educational, or research use;
+   (e) use it for training, benchmarking, or evaluating machine
+       learning models.
 
-3. Non-Commercial Use
+   Viewing the code in a browser for evaluation purposes only does not
+   require permission. Anything beyond viewing requires permission.
 
-   This software may not be sold, sublicensed, incorporated into
-   commercial products, or otherwise used for commercial purposes
-   without prior written permission from the copyright holder.
+3. No Implied License
 
-4. Redistribution
+   No license, whether express, implied, or by estoppel, is granted under
+   any intellectual property rights, including copyright, patent, or
+   trademark rights.
 
-   Redistribution of the original or modified source code is permitted,
-   provided that this license and all copyright notices remain intact.
+4. Permission Requests
 
-5. No Warranty
+   Requests for academic, research, or commercial use, collaboration,
+   or licensing should be directed to the copyright holder through the
+   repository contact channels. Any permission, if granted, will be set
+   out in a separate written agreement.
 
-   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+5. Attribution
+
+   Any use authorized in writing must retain this license file and all
+   copyright notices, and must provide appropriate academic citation to
+   the original repository and author(s).
+
+6. Safety Notice
+
+   The Software is experimental research code for simulation environments
+   only. It is not certified, tested, or approved for real vehicles,
+   safety-critical systems, or public road use.
+
+7. Disclaimer of Warranty and Liability
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
 
@@ -45,18 +64,5 @@ conditions:
    CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
    TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE
    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Citation
-
-If this repository contributes to your research, publication, thesis,
-or academic work, please cite the associated paper or this GitHub
-repository.
-
-BibTeX information will be provided upon publication.
-
-Contact
-
-For collaboration, licensing inquiries, or commercial use, please
-contact the repository author.
 
 © 2026 Arman Moradi. All rights reserved.
