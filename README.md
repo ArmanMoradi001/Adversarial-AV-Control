@@ -57,6 +57,8 @@ Action space is `MultiDiscrete([5, 2])`: driving action (lane-left / idle / lane
 **3. MAPE-K self-adaptation (`src/mapek_loop.py`).**
 Monitor → Analyse → Plan → Execute loop scores each episode with a weighted composite (collisions 45%, safe distance 20%, detection 20%, speed 10%, lane-change 5%). It tracks the best checkpoint (`best_mapek_model`), and on sustained degradation decays learning rate, boosts entropy for re-exploration, and activates a speed-cap penalty. In evaluation it runs in `eval_only` mode (monitoring without mutation).
 
+<img src="pics/Figure_1.png" alt="Overall System Architecture" width="70%">
+
 ---
 
 ## Key Results (Evaluation, 1000 episodes)
@@ -111,41 +113,37 @@ Independent benchmark with the best checkpoint (`models/best_mapek_model`): **1,
 
 Mean **0.78% (SD = 3.34%)**, with the vast majority of episodes collision-free. Rare failures are confined to highly complex multi-agent edge scenarios with aggressive neighbours. Confirms the safety layer generalized without overfitting.
 
-![Evaluation Collision Rate](pics/01_collision_rate.png)
+<img src="pics/01_collision_rate.png" alt="Evaluation Collision Rate" width="70%">
 
 ### 2. Average Safe Distance
 
 Time-averaged minimum Euclidean distance to the nearest surrounding vehicle. Mean **~32.19 m**, showing proactive spacing and a wide margin to absorb unpredictable dynamics.
 
-![Average Safe Distance](pics/02_safe_distance.png)
+<img src="pics/02_safe_distance.png" alt="Average Safe Distance" width="70%">
 
 ### 3. Average Speed
 
 Mean **~19.97 m/s (~71.89 km/h)**, closely matching optimal target velocity for mixed highway driving. Balances safety constraints with efficient traffic flow — no overly conservative crawling.
 
-![Average Speed](pics/03_avg_speed.png)
+<img src="pics/03_avg_speed.png" alt="Average Speed" width="70%">
 
 ### 4. Lane-Change Success Rate
 
 Mean **96.42%**, with maneuvers attempted in **100%** of evaluation episodes — active, decisive navigation (opportunistic overtakes and repositioning) rather than passive lane-keeping, with minimal aborted attempts.
 
-![Lane-Change Success Rate](pics/04_lane_change_success.png)
-
-> If `pics/04_lane_change_success.png` is missing, re-run evaluation: it is generated as `results/04_lane_change_success.png` by `src/main.py`.
+<img src="pics/04_lane_change_success.png" alt="Lane-Change Success Rate" width="70%">
 
 ### 5. GPS Spoofing Detection vs False Positives
 
 Mean detection **99.80% (SD = 1.97%)** with mean false-positive rate only **0.37%**. The policy identifies almost all compromised GPS signals while rarely flagging clean signals — critical for deployment, where each false alarm triggers an unnecessary countermeasure.
 
-![Detection vs False Positives](pics/05_detection_vs_fp.png)
+<img src="pics/05_detection_vs_fp.png" alt="Detection vs False Positives" width="70%">
 
 ### 6. Overall Performance Score
 
 Composite of low collision frequency, safe spacing, speed regulation, lane-change execution, and spoofing detection (see `SCORE_WEIGHTS` in `src/mapek_loop.py`). Mean **0.937 (93.68%)**, validating a reliable, safe, and efficient autonomous driving framework.
 
-![Composite Performance Score](pics/06_performance_score.png)
-
-> If `pics/06_performance_score.png` is missing, copy `results/06_performance_score.png` after running `src/main.py`. An overview grid is also saved as `results/00_all_metrics_overview.png`.
+<img src="pics/06_performance_score.png" alt="Composite Performance Score" width="70%">
 
 ---
 
