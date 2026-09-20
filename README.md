@@ -1,270 +1,205 @@
-# Autonomous Vehicle Control & GPS Spoofing Detection
+# Adversarial AV Control: Secure Autonomous Driving with GPS Spoofing Detection
 
-![Autonomous Vehicle Simulation Header](https://via.placeholder.com/1200x400.png?text=Autonomous+Vehicle+Control+%26+GPS+Spoofing+Detection)
+A Reinforcement Learning framework for safe autonomous driving under **GPS spoofing attacks**, built on `highway-v0` with a **RecurrentPPO (MlpLstmPolicy) + MAPE-K self-adaptation loop**.
 
-An advanced Reinforcement Learning (RL) framework for autonomous vehicle motion planning, speed control, and real-time GPS spoofing detection. This project implements a **4-Phase Curriculum Learning** strategy to progressively train an agent to navigate dense, dynamic traffic environments while simultaneously identifying and mitigating adversarial spatial telemetry manipulation.
+The agent jointly learns **driving (speed control, distance keeping, lane changes)** and **attack detection (declare / mitigate spoofed GPS)**, trained with a 4-phase curriculum over **3,000,000 timesteps** and validated in an independent **1,000-episode evaluation**.
 
-> **Note:** Replace the placeholder images with your actual architecture diagrams, training plots, and evaluation figures.
+> All figures below are from the **evaluation phase** (`results/` → `pics/`). Training curves and code are available in this repository.
 
 ---
 
-# Table of Contents
+## Table of Contents
 
-- [Autonomous Vehicle Control \& GPS Spoofing Detection](#autonomous-vehicle-control--gps-spoofing-detection)
-- [Table of Contents](#table-of-contents)
 - [Overview](#overview)
-- [Key Features](#key-features)
-- [Architecture \& Curriculum Strategy](#architecture--curriculum-strategy)
-  - [Phase 1 — Basic Operational Control](#phase-1--basic-operational-control)
-  - [Phase 2 — Dynamic Traffic Adaptation](#phase-2--dynamic-traffic-adaptation)
-  - [Phase 3 — High-Density Multi-Agent Interaction](#phase-3--high-density-multi-agent-interaction)
-  - [Phase 4 — Stress Testing \& Convergence](#phase-4--stress-testing--convergence)
-- [Experimental \& Training Results](#experimental--training-results)
-  - [1. Collision Rates](#1-collision-rates)
+- [Key Results (Evaluation, 1000 episodes)](#key-results-evaluation-1000-episodes)
+- [Method](#method)
+  - [Curriculum Learning Strategy](#curriculum-learning-strategy)
+  - [Training Phase Summary](#training-phase-summary)
+- [Evaluation Phase Results](#evaluation-phase-results)
+  - [1. Collision Rate](#1-collision-rate)
   - [2. Average Safe Distance](#2-average-safe-distance)
   - [3. Average Speed](#3-average-speed)
-  - [4. GPS Spoofing Detection Performance](#4-gps-spoofing-detection-performance)
-  - [5. Independent Evaluation Phase Summary](#5-independent-evaluation-phase-summary)
-- [Directory Structure](#directory-structure)
-- [Installation \& Setup](#installation--setup)
-  - [Clone the Repository](#clone-the-repository)
-  - [Create a Virtual Environment](#create-a-virtual-environment)
-    - [Linux/macOS](#linuxmacos)
-    - [Windows](#windows)
-  - [Install Dependencies](#install-dependencies)
+  - [4. Lane-Change Success Rate](#4-lane-change-success-rate)
+  - [5. GPS Spoofing Detection vs False Positives](#5-gps-spoofing-detection-vs-false-positives)
+  - [6. Overall Performance Score](#6-overall-performance-score)
+- [Repository Structure](#repository-structure)
+- [Installation](#installation)
 - [Usage](#usage)
-  - [Train the Agent](#train-the-agent)
-  - [Evaluate a Trained Model](#evaluate-a-trained-model)
 - [License](#license)
 
 ---
 
-# Overview
+## Overview
 
-Modern autonomous vehicles rely heavily on Global Positioning System (GPS) telemetry for global localization and trajectory planning. However, GPS signals are vulnerable to adversarial spoofing attacks that inject false positional offsets, potentially forcing vehicles into dangerous collisions or off-course maneuvers.
+Autonomous vehicles depend on GPS for localization and planning, but GPS is vulnerable to **spoofing**: false positional offsets that can cause collisions or off-route behavior.
 
-This framework introduces a unified reinforcement learning policy that balances motion planning, speed regulation, and safety while integrating a GPS spoofing detection module capable of identifying anomalous spatial telemetry in real time. Through curriculum learning, the agent gradually transitions from simple driving tasks to complex, high-density traffic scenarios under active spoofing attacks.
+This project trains a unified policy that:
 
----
+1. Drives safely in dense, dynamic highway traffic.
+2. Detects spoofed GPS in real time from temporal observation history (LSTM).
+3. Avoids false alarms that would trigger costly unnecessary countermeasures.
 
-# Key Features
-
-- **4-Phase Curriculum Learning** using varying episode continuation probabilities ($p_{\text{continue}}$).
-- **Integrated GPS Spoofing Detection** with near-zero false-positive performance.
-- **Safety-Driven Motion Planning** that maintains adaptive car-following distances greater than 30 m.
-- **Stable Speed Regulation** around a target velocity of approximately 20 m/s.
-- **High-Density Multi-Agent Training** for improved robustness.
-- **Independent Evaluation Framework** with comprehensive performance metrics.
+Self-adaptation is handled by a **MAPE-K loop** (`src/mapek_loop.py`) that monitors safety / detection metrics and adapts (e.g. speed-cap, best-model tracking) during training and evaluation.
 
 ---
 
-# Architecture & Curriculum Strategy
+## Key Results (Evaluation, 1000 episodes)
 
-Training directly in highly adversarial traffic environments often causes reinforcement learning policies to collapse before meaningful learning occurs.
+Best model, independent benchmark, 1,000 episodes:
 
-To address this challenge, training is divided into **3,000,000 timesteps** across four progressively difficult curriculum phases.
-
-![Curriculum Strategy Diagram](https://via.placeholder.com/800x300.png?text=Curriculum+Learning+Phases+Diagram)
-
-## Phase 1 — Basic Operational Control
-
-**Steps:** 0–500k
-
-**Continuation Probability:** $p_{\text{continue}}=0.98$
-
-- Basic speed regulation
-- Lane following
-- Safe distance maintenance
-- Initial GPS spoofing detector training
+| Metric | Mean | Std | Interpretation |
+|---|---|---|---|
+| **Collision rate** | **0.78%** | 3.34% | Near-zero; failures only in multi-agent edge cases |
+| **Safe distance** | **32.19 m** | — | Wide proactive buffer, no tailgating |
+| **Average speed** | **19.97 m/s (~71.89 km/h)** | — | Efficient, not overly conservative |
+| **Lane-change success** | **96.42%** | — | Attempted in 100% of episodes |
+| **Spoofing detection rate** | **99.80%** | 1.97% | Almost every spoofed step caught |
+| **False-positive rate** | **0.37%** | — | Clean GPS rarely flagged |
+| **Composite score** | **0.937 (93.68%)** | — | Safety + efficiency + detection |
 
 ---
 
-## Phase 2 — Dynamic Traffic Adaptation
+## Method
 
-**Steps:** 500k–1.2M
+### Curriculum Learning Strategy
 
-**Continuation Probability:** $p_{\text{continue}}=0.92$
+Direct training under short, hard-to-detect spoofing bursts causes policy collapse. We therefore use curriculum learning where traffic stays as `highway-v0` throughout, while **attack temporal detectability** is progressively reduced via the Markov persistence probability `p_continue`.
 
-- Increased traffic density
-- Longer driving episodes
-- Frequent GPS spoofing attacks
-- Improved policy robustness
+Mean burst length ≈ `1 / (1 - p_continue)`:
 
----
+| Phase | Steps | `p_continue` | Mean burst | Focus |
+|---|---|---|---|---|
+| **1 – Initialization** | 0 – 500k | 0.98 | ~50 steps | Long, detectable bursts. Learn basic velocity control, distance keeping, preliminary detection signatures. |
+| **2 – Transition** | 500k – 1.2M | 0.92 | ~12 steps | More frequent anomalies. Refine collision avoidance, adapt to GPS triggers. |
+| **3 – Target difficulty** | 1.2M – 2.5M | 0.85 | ~7 steps | Short bursts. Learn fast response without raising false alarms. |
+| **4 – Stabilization** | 2.5M – 3.0M | 0.85 | ~7 steps | Same difficulty as Phase 3. Stabilize joint driving–detection policy. |
 
-## Phase 3 — High-Density Multi-Agent Interaction
+Checkpoints evaluated every 50,000 steps. Implementation: `src/train_unified_agent.py` (`CURRICULUM`, `make_env(p_continue)`).
 
-**Steps:** 1.2M–2.5M
+### Training Phase Summary
 
-**Continuation Probability:** $p_{\text{continue}}=0.85$
+GPS detector refinement across curriculum:
 
-- Aggressive surrounding vehicles
-- Extended spoofing attacks
-- Noisy observations
-- Complex lane-change decisions
+- **Detection Rate (TPR):** started at **90.81%** at 50k steps, then converged to **98.5–100.0%** in Phases 3–4, with sustained **100.0%** in final Phase-4 checkpoints.
+- **False Positive Rate (FPR):** peaked at **25.03%** during early Phase-1 exploration, fell below **10%** in Phases 2–3 as the agent learned to separate true attacks from noise, and stabilized near zero (minor fluctuations <5%) in Phase 4.
 
----
-
-## Phase 4 — Stress Testing & Convergence
-
-**Steps:** 2.5M–3.0M
-
-**Continuation Probability:** $p_{\text{continue}}=0.85$
-
-- Maximum environmental complexity
-- Final policy convergence
-- Near-zero collision frequency
-- Near-perfect spoofing detection
+This dual convergence shows the detector learned robust, highly specific features: it catches attacks while preventing false alarms.
 
 ---
 
-# Experimental & Training Results
+## Evaluation Phase Results
 
-## 1. Collision Rates
+Independent benchmark with the best checkpoint (`models/best_mapek_model`): **1,000 simulation episodes**, deterministic policy.
 
-Across the four curriculum phases, collision frequency steadily decreased as training progressed. Initial exploration produced a collision rate of approximately **2.43%**, while Phase 4 achieved **0.00%** collisions across nearly all evaluation checkpoints.
+### 1. Collision Rate
 
-![Collision Rate Trend](https://via.placeholder.com/800x400.png?text=Collision+Rate+Over+Training+Steps)
+Mean **0.78% (SD = 3.34%)**, with the vast majority of episodes collision-free. Rare failures are confined to highly complex multi-agent edge scenarios with aggressive neighbours. Confirms the safety layer generalized without overfitting.
 
----
+![Evaluation Collision Rate](pics/01_collision_rate.png)
 
-## 2. Average Safe Distance
+### 2. Average Safe Distance
 
-The learned policy progressively increased defensive spacing as environmental complexity grew.
+Time-averaged minimum Euclidean distance to the nearest surrounding vehicle. Mean **~32.19 m**, showing proactive spacing and a wide margin to absorb unpredictable dynamics.
 
-- **Phase 1:** ~21.09 m
-- **Phase 3–4:** 29.36–40.07 m
+![Average Safe Distance](pics/02_safe_distance.png)
 
-These larger safety margins helped absorb unexpected maneuvers during spoofing attacks.
+### 3. Average Speed
 
-![Safe Distance Trend](https://via.placeholder.com/800x400.png?text=Average+Safe+Distance+Trend)
+Mean **~19.97 m/s (~71.89 km/h)**, closely matching optimal target velocity for mixed highway driving. Balances safety constraints with efficient traffic flow — no overly conservative crawling.
 
----
+![Average Speed](pics/03_avg_speed.png)
 
-## 3. Average Speed
+### 4. Lane-Change Success Rate
 
-Despite increasing environmental difficulty, the policy maintained remarkably stable speed regulation throughout training.
+Mean **96.42%**, with maneuvers attempted in **100%** of evaluation episodes — active, decisive navigation (opportunistic overtakes and repositioning) rather than passive lane-keeping, with minimal aborted attempts.
 
-- Target Speed: **≈20.03 m/s**
-- Equivalent Speed: **≈72.1 km/h**
+![Lane-Change Success Rate](pics/04_lane_change_success.png)
 
-Temporary speed reductions occurred only during anomaly mitigation before returning to nominal cruise speed.
+> If `pics/04_lane_change_success.png` is missing, re-run evaluation: it is generated as `results/04_lane_change_success.png` by `src/main.py`.
 
-![Average Speed Trend](https://via.placeholder.com/800x400.png?text=Average+Speed+Stability)
+### 5. GPS Spoofing Detection vs False Positives
 
----
+Mean detection **99.80% (SD = 1.97%)** with mean false-positive rate only **0.37%**. The policy identifies almost all compromised GPS signals while rarely flagging clean signals — critical for deployment, where each false alarm triggers an unnecessary countermeasure.
 
-## 4. GPS Spoofing Detection Performance
+![Detection vs False Positives](pics/05_detection_vs_fp.png)
 
-The integrated detection module demonstrated clear learning convergence.
+### 6. Overall Performance Score
 
-| Metric | Initial | Final |
-|---------|---------|-------|
-| Detection Rate | 90.81% | **100.0%** |
-| False Positive Rate | 25.03% | **<1.0% (0.00% in Phase 4)** |
+Composite of low collision frequency, safe spacing, speed regulation, lane-change execution, and spoofing detection (see `SCORE_WEIGHTS` in `src/mapek_loop.py`). Mean **0.937 (93.68%)**, validating a reliable, safe, and efficient autonomous driving framework.
 
-![Detection Performance](https://via.placeholder.com/800x400.png?text=Spoofing+Detection+Rate+vs+False+Positive+Rate)
+![Composite Performance Score](pics/06_performance_score.png)
+
+> If `pics/06_performance_score.png` is missing, copy `results/06_performance_score.png` after running `src/main.py`. An overview grid is also saved as `results/00_all_metrics_overview.png`.
 
 ---
 
-## 5. Independent Evaluation Phase Summary
-
-After training, the final policy was evaluated across **1,000 independent simulation episodes**.
-
-| Evaluation Metric | Mean | Std. Dev. | Description |
-|-------------------|------|-----------|-------------|
-| **Collision Rate** | **0.78%** | 3.34% | Near-zero collisions |
-| **Safe Distance** | **32.19 m** | — | Defensive spacing maintained |
-| **Average Speed** | **19.97 m/s** | — | Stable cruising velocity |
-| **Lane Change Success** | **96.42%** | — | High maneuver success |
-| **GPS Spoofing Detection Rate** | **99.80%** | 1.97% | Near-perfect attack detection |
-| **False Positive Rate** | **0.37%** | — | Minimal false alarms |
-| **Composite Performance Score** | **0.937** | — | Overall performance: **93.68%** |
-
----
-
-# Directory Structure
+## Repository Structure
 
 ```text
 .
-├── checkpoints/             # Saved model weights
-├── logs/                    # Training logs and evaluation metrics
+├── pics/                          # Evaluation figures used in this README
+│   ├── 01_collision_rate.png
+│   ├── 02_safe_distance.png
+│   ├── 03_avg_speed.png
+│   ├── 04_lane_change_success.png
+│   ├── 05_detection_vs_fp.png
+│   └── 06_performance_score.png
 ├── src/
-│   ├── env/                 # Simulation environment
-│   ├── models/              # RL policy and GPS spoofing detector
-│   ├── utils/               # Logging and utility functions
-│   └── train.py             # Training entry point
-├── eval.py                  # Evaluation script
-├── requirements.txt         # Python dependencies
-└── README.md                # Project documentation
+│   ├── train_unified_agent.py     # 4-phase curriculum training (RecurrentPPO)
+│   ├── main.py                    # 1000-episode evaluation + plots + JSON stats
+│   ├── unified_environment.py     # highway-v0 wrapper + GPS spoofing + metrics
+│   └── mapek_loop.py              # MAPE-K monitor/analyze/plan/execute + scoring
+├── models/                        # Checkpoints (incl. best_mapek_model)
+├── results/                       # experiment_results.json + generated plots
+├── training_results/              # training_log.json + training curves
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-# Installation & Setup
-
-## Clone the Repository
+## Installation
 
 ```bash
-git clone https://github.com/your-username/autonomous-gps-spoofing-detection.git
+git clone https://github.com/your-username/Adversarial-AV-Control.git
+cd Adversarial-AV-Control
 
-cd autonomous-gps-spoofing-detection
-```
-
-## Create a Virtual Environment
-
-```bash
 python -m venv venv
-```
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-### Linux/macOS
-
-```bash
-source venv/bin/activate
-```
-
-### Windows
-
-```powershell
-venv\Scripts\activate
-```
-
-## Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
+Requires: `gymnasium`, `highway-env`, `stable-baselines3`, `sb3-contrib` (RecurrentPPO), `torch`, `matplotlib`, `numpy`.
+
 ---
 
-# Usage
+## Usage
 
-## Train the Agent
-
-Run the complete 4-phase curriculum learning pipeline.
+### Train (4-phase curriculum, 3M steps)
 
 ```bash
-python src/train.py \
-    --total-timesteps 3000000 \
-    --log-dir ./logs
+python src/train_unified_agent.py
 ```
 
----
+Outputs: `models/` checkpoints, `training_results/training_log.json` + per-metric curves with phase shading, TensorBoard logs in `unified_ppo_tensorboard/`.
 
-## Evaluate a Trained Model
-
-Evaluate a saved checkpoint across 1,000 simulation episodes.
+### Evaluate (1000 episodes, best model)
 
 ```bash
-python eval.py \
-    --weights ./checkpoints/phase4_model.zip \
-    --episodes 1000
+python src/main.py
 ```
+
+Loads `models/best_mapek_model`, runs 1,000 episodes on `highway-v0`, saves:
+
+- `results/experiment_results.json` (means / stds)
+- `results/01_collision_rate.png` … `results/06_performance_score.png`
+- `results/00_all_metrics_overview.png`
+
+Copy desired plots into `pics/` to update this README.
 
 ---
 
-# License
+## License
 
-This project is distributed under the **MIT License**.
-
-See the `LICENSE` file for additional information.
+Distributed under the **MIT License**. See `LICENSE` for details.
